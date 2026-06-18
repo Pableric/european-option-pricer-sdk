@@ -1,0 +1,11 @@
+build/
+benchmarks/intel-mkl/build/
+*.o
+*.a
+*.dylib
+*.dll
+*.exe
+*.csv
+__pycache__/
+.cache/
+
