@@ -27,6 +27,18 @@ python3 scripts/run_mkl_compare.py --blocks 128 --iterations 5 --warmup 2
 The benchmark reports full pricing modes separately from `mkl-sobol-uniform`,
 which is raw Sobol uniform generation only and does not produce a price.
 
+Run a broader sweep:
+
+```sh
+python3 scripts/run_mkl_compare.py --suite comprehensive --iterations 5 --warmup 2
+```
+
+Print raw benchmark lines as well as the summary tables:
+
+```sh
+python3 scripts/run_mkl_compare.py --blocks 128 --raw
+```
+
 On a machine without native AVX-512, wrap the benchmark with Intel SDE:
 
 ```sh

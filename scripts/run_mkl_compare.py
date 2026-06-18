@@ -11,6 +11,11 @@ BENCH_DIR = ROOT / "benchmarks" / "intel-mkl"
 BUILD_DIR = BENCH_DIR / "build"
 BIN = BUILD_DIR / "bench_european_mkl"
 
+SUITES = {
+    "quick": [1, 16, 128],
+    "comprehensive": [1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 1221, 2048, 4096, 8192],
+}
+
 
 def run(cmd, cwd=ROOT):
     p = subprocess.run([str(x) for x in cmd], cwd=cwd, text=True,
@@ -35,11 +40,60 @@ def as_float(row, key):
         return None
 
 
+def fmt_float(value, width=12, precision=6):
+    if value is None:
+        return "NA".rjust(width)
+    return f"{value:.{precision}f}".rjust(width)
+
+
+def fmt_text(value, width):
+    return str(value).rjust(width)
+
+
+def fmt_price(value, width=14):
+    if value in (None, "NA"):
+        return "NA".rjust(width)
+    try:
+        return f"{float(value):.8g}".rjust(width)
+    except ValueError:
+        return str(value).rjust(width)
+
+
+def print_result_table(rows):
+    if not rows:
+        return
+
+    print("\nRESULT TABLE")
+    header = (
+        f"{'blocks':>8} {'type':>4} {'mode':>24} {'workload':>14} "
+        f"{'samples':>10} {'ns/value':>12} {'Gvalues/s':>12} "
+        f"{'price':>14} {'abs_err':>12}"
+    )
+    print(header)
+    print("-" * len(header))
+    for row in sorted(rows, key=lambda r: (int(r["blocks"]), r["type"], r["mode"])):
+        ns = as_float(row, "ns_per_value")
+        vps = as_float(row, "values_per_sec")
+        gvps = vps / 1.0e9 if vps is not None else None
+        err = as_float(row, "abs_err")
+        print(
+            f"{fmt_text(row.get('blocks', 'NA'), 8)} "
+            f"{fmt_text(row.get('type', 'NA'), 4)} "
+            f"{row.get('mode', 'NA'):>24} "
+            f"{row.get('workload', 'unknown'):>14} "
+            f"{fmt_text(row.get('samples', 'NA'), 10)} "
+            f"{fmt_float(ns)} "
+            f"{fmt_float(gvps)} "
+            f"{fmt_price(row.get('price'))} "
+            f"{fmt_float(err, precision=6)}"
+        )
+
+
 def print_summary(rows):
     if not rows:
         return
 
-    print("\nSUMMARY")
+    print("\nCOMPARISON")
     by_case = {}
     for row in rows:
         key = (row.get("blocks"), row.get("type"))
@@ -49,26 +103,20 @@ def print_summary(rows):
         sdk = modes.get("sdk-direct")
         mkl_full = modes.get("mkl-sobol-gaussian-price")
         mkl_uniform = modes.get("mkl-sobol-uniform")
-        print(f"  blocks={blocks} type={opt_type}")
+        samples = next(iter(modes.values())).get("samples", "NA")
+        print(f"  blocks={blocks} samples={samples} type={opt_type}")
 
         if sdk and mkl_full:
             sdk_ns = as_float(sdk, "ns_per_value")
             mkl_ns = as_float(mkl_full, "ns_per_value")
             if sdk_ns and mkl_ns:
-                print(f"    pricing: sdk-direct {sdk_ns:.6f} ns/value vs mkl-full {mkl_ns:.6f} ns/value = {mkl_ns / sdk_ns:.2f}x faster")
+                print(f"    pricing speedup: sdk-direct {sdk_ns:.6f} ns/value vs mkl-full {mkl_ns:.6f} ns/value = {mkl_ns / sdk_ns:.2f}x")
 
         if sdk and mkl_uniform:
             sdk_ns = as_float(sdk, "ns_per_value")
             raw_ns = as_float(mkl_uniform, "ns_per_value")
             if sdk_ns and raw_ns:
-                print(f"    context: sdk full pricing is {sdk_ns / raw_ns:.2f}x the cost of MKL raw Sobol uniform generation")
-
-        for mode, row in sorted(modes.items()):
-            ns = as_float(row, "ns_per_value")
-            workload = row.get("workload", "unknown")
-            price = row.get("price", "NA")
-            err = row.get("abs_err", "NA")
-            print(f"    {mode}: workload={workload} ns/value={ns:.6f} price={price} abs_err={err}")
+                print(f"    raw context: sdk full pricing is {sdk_ns / raw_ns:.2f}x the cost of MKL raw Sobol uniform generation")
 
 
 def build():
@@ -78,7 +126,8 @@ def build():
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--blocks", type=int, nargs="+", default=[1, 16, 128])
+    ap.add_argument("--blocks", type=int, nargs="+", help="explicit block counts; overrides --suite")
+    ap.add_argument("--suite", choices=sorted(SUITES), default="quick")
     ap.add_argument("--iterations", type=int, default=5)
     ap.add_argument("--warmup", type=int, default=2)
     ap.add_argument("--types", nargs="+", choices=["call", "put"], default=["call", "put"])
@@ -90,14 +139,16 @@ def main():
     ap.add_argument("--t", type=float, default=1.0)
     ap.add_argument("--csv", type=Path)
     ap.add_argument("--sde", type=Path, help="optional Intel SDE executable used to wrap benchmark runs")
+    ap.add_argument("--raw", action="store_true", help="print raw RESULT lines from the benchmark executable")
     ap.add_argument("--no-build", action="store_true")
     args = ap.parse_args()
+    blocks_list = args.blocks if args.blocks else SUITES[args.suite]
 
     if not args.no_build:
         build()
 
     rows = []
-    for blocks in args.blocks:
+    for blocks in blocks_list:
         for opt_type in args.types:
             for mode in args.modes:
                 cmd = [
@@ -116,7 +167,8 @@ def main():
                 if args.sde:
                     cmd = [args.sde, "-skx", "--", *cmd]
                 out = run(cmd)
-                print(out, end="")
+                if args.raw:
+                    print(out, end="")
                 for line in out.splitlines():
                     if line.startswith("RESULT "):
                         rows.append(parse_result(line))
@@ -128,6 +180,7 @@ def main():
             w.writeheader()
             w.writerows(rows)
 
+    print_result_table(rows)
     print_summary(rows)
 
 
