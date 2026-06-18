@@ -24,6 +24,9 @@ source /opt/intel/oneapi/setvars.sh
 python3 scripts/run_mkl_compare.py --blocks 128 --iterations 5 --warmup 2
 ```
 
+The benchmark reports full pricing modes separately from `mkl-sobol-uniform`,
+which is raw Sobol uniform generation only and does not produce a price.
+
 On a machine without native AVX-512, wrap the benchmark with Intel SDE:
 
 ```sh

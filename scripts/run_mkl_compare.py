@@ -28,6 +28,49 @@ def parse_result(line):
     return data
 
 
+def as_float(row, key):
+    try:
+        return float(row[key])
+    except (KeyError, ValueError):
+        return None
+
+
+def print_summary(rows):
+    if not rows:
+        return
+
+    print("\nSUMMARY")
+    by_case = {}
+    for row in rows:
+        key = (row.get("blocks"), row.get("type"))
+        by_case.setdefault(key, {})[row.get("mode")] = row
+
+    for (blocks, opt_type), modes in sorted(by_case.items(), key=lambda x: (int(x[0][0]), x[0][1])):
+        sdk = modes.get("sdk-direct")
+        mkl_full = modes.get("mkl-sobol-gaussian-price")
+        mkl_uniform = modes.get("mkl-sobol-uniform")
+        print(f"  blocks={blocks} type={opt_type}")
+
+        if sdk and mkl_full:
+            sdk_ns = as_float(sdk, "ns_per_value")
+            mkl_ns = as_float(mkl_full, "ns_per_value")
+            if sdk_ns and mkl_ns:
+                print(f"    pricing: sdk-direct {sdk_ns:.6f} ns/value vs mkl-full {mkl_ns:.6f} ns/value = {mkl_ns / sdk_ns:.2f}x faster")
+
+        if sdk and mkl_uniform:
+            sdk_ns = as_float(sdk, "ns_per_value")
+            raw_ns = as_float(mkl_uniform, "ns_per_value")
+            if sdk_ns and raw_ns:
+                print(f"    context: sdk full pricing is {sdk_ns / raw_ns:.2f}x the cost of MKL raw Sobol uniform generation")
+
+        for mode, row in sorted(modes.items()):
+            ns = as_float(row, "ns_per_value")
+            workload = row.get("workload", "unknown")
+            price = row.get("price", "NA")
+            err = row.get("abs_err", "NA")
+            print(f"    {mode}: workload={workload} ns/value={ns:.6f} price={price} abs_err={err}")
+
+
 def build():
     run(["cmake", "-S", BENCH_DIR, "-B", BUILD_DIR, "-DCMAKE_BUILD_TYPE=Release"])
     run(["cmake", "--build", BUILD_DIR, "-j"])
@@ -84,6 +127,8 @@ def main():
             w = csv.DictWriter(f, fieldnames=keys)
             w.writeheader()
             w.writerows(rows)
+
+    print_summary(rows)
 
 
 if __name__ == "__main__":

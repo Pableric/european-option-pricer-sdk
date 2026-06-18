@@ -158,23 +158,40 @@ static double run_mkl_gaussian_price(const Config& c, std::vector<float>& z, dou
     return t1 - t0;
 }
 
+static bool is_pricing_mode(const std::string& mode) {
+    return mode != "mkl-sobol-uniform";
+}
+
 static void print_result(const Config& c, const char* mode, double price, double analytic,
                          double median_seconds, double setup_seconds) {
     const double samples = static_cast<double>(c.blocks * kBlockSize);
     const double values_per_sec = samples / median_seconds;
     const double ns_per_value = median_seconds * 1.0e9 / samples;
-    std::printf("RESULT mode=%s type=%s blocks=%llu samples=%llu price=%.12g analytic=%.12g abs_err=%.6g setup_seconds=%.9f median_seconds=%.9f values_per_sec=%.6f ns_per_value=%.6f\n",
-        mode,
-        c.type.c_str(),
-        static_cast<unsigned long long>(c.blocks),
-        static_cast<unsigned long long>(c.blocks * kBlockSize),
-        price,
-        analytic,
-        std::fabs(price - analytic),
-        setup_seconds,
-        median_seconds,
-        values_per_sec,
-        ns_per_value);
+    const bool pricing = is_pricing_mode(mode);
+    if (pricing) {
+        std::printf("RESULT mode=%s workload=pricing type=%s blocks=%llu samples=%llu price=%.12g analytic=%.12g abs_err=%.6g setup_seconds=%.9f median_seconds=%.9f values_per_sec=%.6f ns_per_value=%.6f\n",
+            mode,
+            c.type.c_str(),
+            static_cast<unsigned long long>(c.blocks),
+            static_cast<unsigned long long>(c.blocks * kBlockSize),
+            price,
+            analytic,
+            std::fabs(price - analytic),
+            setup_seconds,
+            median_seconds,
+            values_per_sec,
+            ns_per_value);
+    } else {
+        std::printf("RESULT mode=%s workload=generator-only type=%s blocks=%llu samples=%llu price=NA analytic=NA abs_err=NA setup_seconds=%.9f median_seconds=%.9f values_per_sec=%.6f ns_per_value=%.6f note=raw_sobol_uniform_no_pricing\n",
+            mode,
+            c.type.c_str(),
+            static_cast<unsigned long long>(c.blocks),
+            static_cast<unsigned long long>(c.blocks * kBlockSize),
+            setup_seconds,
+            median_seconds,
+            values_per_sec,
+            ns_per_value);
+    }
 }
 
 int main(int argc, char** argv) {
