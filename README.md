@@ -56,25 +56,22 @@ Contract:
 S0=100 K=100 r=0.05 sigma=0.2 T=1
 ```
 
-Selected results. `vs MKL full` compares `sdk-direct` against
+Latest selected results after the direct setup-fusion update. `vs MKL full` compares `sdk-direct` against
 `mkl-sobol-gaussian-price`. `vs MKL Sobol` compares full SDK pricing against raw
 MKL Sobol uniform generation only.
 
 ```text
 type  blocks  samples     sdk ns/value  mkl full ns  mkl sobol ns  vs MKL full  vs MKL Sobol  sdk abs_err
-call       1       8,192     10.023682     5.451050      0.109009        0.54x         0.01x    0.007816
-put        1       8,192      9.969727     5.200562      0.109131        0.52x         0.01x    0.008436
-call     128   1,048,576      0.233498     5.257521      0.188629       22.52x         0.81x    0.000087
-put      128   1,048,576      0.227925     5.016124      0.187053       22.01x         0.82x    0.000062
-call    1221  10,002,432      0.159627     5.331564      0.201620       33.40x         1.26x    0.000087
-put     1221  10,002,432      0.163024     5.083920      0.192128       31.19x         1.18x    0.000014
-call    8192  67,108,864      0.150344     5.383434      0.344888       35.81x         2.29x    0.004804
-put     8192  67,108,864      0.148991     5.051132      0.349008       33.90x         2.34x    0.001430
+call       1       8,192      5.158569     5.453491      0.109009        1.06x         0.02x    0.007818
+put        1       8,192      4.906128     5.233032      0.111816        1.07x         0.02x    0.008435
+call      16     131,072      0.512672     5.213966      0.109398       10.17x         0.21x    0.000602
+put       16     131,072      0.466377     4.983978      0.110336       10.69x         0.24x    0.000509
+call     128   1,048,576      0.195749     5.255865      0.185479       26.85x         0.95x    0.000089
+put      128   1,048,576      0.191312     5.011817      0.187770       26.20x         0.98x    0.000060
 ```
 
-The one-block case is included deliberately: it is not the strong case for this
-kernel. The optimized path is designed for block batches where setup and fixed
-entry overhead are amortized.
+The one-block case is included deliberately. After setup fusion it is already
+competitive with oneMKL full pricing, while larger batches show the intended
+steady-state behavior.
 
 `mkl-sobol-uniform` is a raw generator baseline, not a pricing baseline.
-
