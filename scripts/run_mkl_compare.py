@@ -46,6 +46,12 @@ def fmt_float(value, width=12, precision=6):
     return f"{value:.{precision}f}".rjust(width)
 
 
+def fmt_ratio(value, width=10):
+    if value is None:
+        return "NA".rjust(width)
+    return f"{value:.2f}x".rjust(width)
+
+
 def fmt_text(value, width):
     return str(value).rjust(width)
 
@@ -63,11 +69,11 @@ def print_result_table(rows):
     if not rows:
         return
 
-    print("\nRESULT TABLE")
+    print("\nDETAILED RESULTS")
     header = (
         f"{'blocks':>8} {'type':>4} {'mode':>24} {'workload':>14} "
-        f"{'samples':>10} {'ns/value':>12} {'Gvalues/s':>12} "
-        f"{'price':>14} {'abs_err':>12}"
+        f"{'samples':>10} {'setup ms':>10} {'median ms':>11} "
+        f"{'ns/value':>12} {'Gvalues/s':>12} {'price':>14} {'abs_err':>12}"
     )
     print(header)
     print("-" * len(header))
@@ -75,6 +81,8 @@ def print_result_table(rows):
         ns = as_float(row, "ns_per_value")
         vps = as_float(row, "values_per_sec")
         gvps = vps / 1.0e9 if vps is not None else None
+        setup = as_float(row, "setup_seconds")
+        median = as_float(row, "median_seconds")
         err = as_float(row, "abs_err")
         print(
             f"{fmt_text(row.get('blocks', 'NA'), 8)} "
@@ -82,6 +90,8 @@ def print_result_table(rows):
             f"{row.get('mode', 'NA'):>24} "
             f"{row.get('workload', 'unknown'):>14} "
             f"{fmt_text(row.get('samples', 'NA'), 10)} "
+            f"{fmt_float(setup * 1.0e3 if setup is not None else None, width=10, precision=3)} "
+            f"{fmt_float(median * 1.0e3 if median is not None else None, width=11, precision=3)} "
             f"{fmt_float(ns)} "
             f"{fmt_float(gvps)} "
             f"{fmt_price(row.get('price'))} "
@@ -99,37 +109,42 @@ def print_summary(rows):
         key = (row.get("blocks"), row.get("type"))
         by_case.setdefault(key, {})[row.get("mode")] = row
 
+    header = (
+        f"{'blocks':>8} {'type':>4} {'samples':>10} "
+        f"{'direct ns':>11} {'gauss-exp ns':>12} {'mkl-full ns':>12} {'mkl-raw ns':>10} "
+        f"{'direct/mkl':>11} {'gauss/mkl':>10} {'gauss/direct':>13} {'direct/raw':>11}"
+    )
+    print(header)
+    print("-" * len(header))
+
     for (blocks, opt_type), modes in sorted(by_case.items(), key=lambda x: (int(x[0][0]), x[0][1])):
         sdk = modes.get("sdk-direct")
         sdk_gaussian = modes.get("sdk-gaussian-exp")
         mkl_full = modes.get("mkl-sobol-gaussian-price")
         mkl_uniform = modes.get("mkl-sobol-uniform")
         samples = next(iter(modes.values())).get("samples", "NA")
-        print(f"  blocks={blocks} samples={samples} type={opt_type}")
+        direct_ns = as_float(sdk, "ns_per_value") if sdk else None
+        gaussian_ns = as_float(sdk_gaussian, "ns_per_value") if sdk_gaussian else None
+        mkl_full_ns = as_float(mkl_full, "ns_per_value") if mkl_full else None
+        raw_ns = as_float(mkl_uniform, "ns_per_value") if mkl_uniform else None
+        direct_mkl = mkl_full_ns / direct_ns if direct_ns and mkl_full_ns else None
+        gaussian_mkl = mkl_full_ns / gaussian_ns if gaussian_ns and mkl_full_ns else None
+        gaussian_direct = gaussian_ns / direct_ns if direct_ns and gaussian_ns else None
+        direct_raw = direct_ns / raw_ns if direct_ns and raw_ns else None
 
-        if sdk and mkl_full:
-            sdk_ns = as_float(sdk, "ns_per_value")
-            mkl_ns = as_float(mkl_full, "ns_per_value")
-            if sdk_ns and mkl_ns:
-                print(f"    pricing speedup: sdk-direct {sdk_ns:.6f} ns/value vs mkl-full {mkl_ns:.6f} ns/value = {mkl_ns / sdk_ns:.2f}x")
-
-        if sdk_gaussian and mkl_full:
-            sdk_ns = as_float(sdk_gaussian, "ns_per_value")
-            mkl_ns = as_float(mkl_full, "ns_per_value")
-            if sdk_ns and mkl_ns:
-                print(f"    pricing speedup: sdk-gaussian-exp {sdk_ns:.6f} ns/value vs mkl-full {mkl_ns:.6f} ns/value = {mkl_ns / sdk_ns:.2f}x")
-
-        if sdk and sdk_gaussian:
-            direct_ns = as_float(sdk, "ns_per_value")
-            gaussian_ns = as_float(sdk_gaussian, "ns_per_value")
-            if direct_ns and gaussian_ns:
-                print(f"    internal comparison: sdk-direct {direct_ns:.6f} ns/value vs sdk-gaussian-exp {gaussian_ns:.6f} ns/value = {gaussian_ns / direct_ns:.2f}x")
-
-        if sdk and mkl_uniform:
-            sdk_ns = as_float(sdk, "ns_per_value")
-            raw_ns = as_float(mkl_uniform, "ns_per_value")
-            if sdk_ns and raw_ns:
-                print(f"    raw context: sdk full pricing is {sdk_ns / raw_ns:.2f}x the cost of MKL raw Sobol uniform generation")
+        print(
+            f"{fmt_text(blocks, 8)} "
+            f"{fmt_text(opt_type, 4)} "
+            f"{fmt_text(samples, 10)} "
+            f"{fmt_float(direct_ns, width=11)} "
+            f"{fmt_float(gaussian_ns, width=12)} "
+            f"{fmt_float(mkl_full_ns, width=12)} "
+            f"{fmt_float(raw_ns, width=10)} "
+            f"{fmt_ratio(direct_mkl, width=11)} "
+            f"{fmt_ratio(gaussian_mkl, width=10)} "
+            f"{fmt_ratio(gaussian_direct, width=13)} "
+            f"{fmt_ratio(direct_raw, width=11)}"
+        )
 
 
 def build():
