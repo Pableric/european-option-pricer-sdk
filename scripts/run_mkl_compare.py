@@ -101,6 +101,7 @@ def print_summary(rows):
 
     for (blocks, opt_type), modes in sorted(by_case.items(), key=lambda x: (int(x[0][0]), x[0][1])):
         sdk = modes.get("sdk-direct")
+        sdk_gaussian = modes.get("sdk-gaussian-exp")
         mkl_full = modes.get("mkl-sobol-gaussian-price")
         mkl_uniform = modes.get("mkl-sobol-uniform")
         samples = next(iter(modes.values())).get("samples", "NA")
@@ -111,6 +112,18 @@ def print_summary(rows):
             mkl_ns = as_float(mkl_full, "ns_per_value")
             if sdk_ns and mkl_ns:
                 print(f"    pricing speedup: sdk-direct {sdk_ns:.6f} ns/value vs mkl-full {mkl_ns:.6f} ns/value = {mkl_ns / sdk_ns:.2f}x")
+
+        if sdk_gaussian and mkl_full:
+            sdk_ns = as_float(sdk_gaussian, "ns_per_value")
+            mkl_ns = as_float(mkl_full, "ns_per_value")
+            if sdk_ns and mkl_ns:
+                print(f"    pricing speedup: sdk-gaussian-exp {sdk_ns:.6f} ns/value vs mkl-full {mkl_ns:.6f} ns/value = {mkl_ns / sdk_ns:.2f}x")
+
+        if sdk and sdk_gaussian:
+            direct_ns = as_float(sdk, "ns_per_value")
+            gaussian_ns = as_float(sdk_gaussian, "ns_per_value")
+            if direct_ns and gaussian_ns:
+                print(f"    internal comparison: sdk-direct {direct_ns:.6f} ns/value vs sdk-gaussian-exp {gaussian_ns:.6f} ns/value = {gaussian_ns / direct_ns:.2f}x")
 
         if sdk and mkl_uniform:
             sdk_ns = as_float(sdk, "ns_per_value")
@@ -131,7 +144,7 @@ def main():
     ap.add_argument("--iterations", type=int, default=5)
     ap.add_argument("--warmup", type=int, default=2)
     ap.add_argument("--types", nargs="+", choices=["call", "put"], default=["call", "put"])
-    ap.add_argument("--modes", nargs="+", default=["sdk-direct", "mkl-sobol-uniform", "mkl-sobol-gaussian-price"])
+    ap.add_argument("--modes", nargs="+", default=["sdk-direct", "sdk-gaussian-exp", "mkl-sobol-uniform", "mkl-sobol-gaussian-price"])
     ap.add_argument("--s0", type=float, default=100.0)
     ap.add_argument("--k", type=float, default=100.0)
     ap.add_argument("--r", type=float, default=0.05)

@@ -24,8 +24,9 @@ source /opt/intel/oneapi/setvars.sh
 python3 scripts/run_mkl_compare.py --blocks 128 --iterations 5 --warmup 2
 ```
 
-The benchmark reports full pricing modes separately from `mkl-sobol-uniform`,
-which is raw Sobol uniform generation only and does not produce a price.
+The benchmark reports both SDK pricing kernels, `sdk-direct` and
+`sdk-gaussian-exp`, separately from `mkl-sobol-uniform`, which is raw Sobol
+uniform generation only and does not produce a price.
 
 Run a broader sweep:
 
@@ -37,6 +38,13 @@ Print raw benchmark lines as well as the summary tables:
 
 ```sh
 python3 scripts/run_mkl_compare.py --blocks 128 --raw
+```
+
+Run only one SDK kernel:
+
+```sh
+python3 scripts/run_mkl_compare.py --blocks 128 --modes sdk-direct
+python3 scripts/run_mkl_compare.py --blocks 128 --modes sdk-gaussian-exp
 ```
 
 On a machine without native AVX-512, wrap the benchmark with Intel SDE:
@@ -56,9 +64,9 @@ Contract:
 S0=100 K=100 r=0.05 sigma=0.2 T=1
 ```
 
-Latest selected results after the direct setup-fusion update. `vs MKL full` compares `sdk-direct` against
-`mkl-sobol-gaussian-price`. `vs MKL Sobol` compares full SDK pricing against raw
-MKL Sobol uniform generation only.
+Latest selected results after the direct setup-fusion update. `vs MKL full`
+compares `sdk-direct` against `mkl-sobol-gaussian-price`. `vs MKL Sobol`
+compares full SDK pricing against raw MKL Sobol uniform generation only.
 
 ```text
 type  blocks  samples     sdk ns/value  mkl full ns  mkl sobol ns  vs MKL full  vs MKL Sobol  sdk abs_err

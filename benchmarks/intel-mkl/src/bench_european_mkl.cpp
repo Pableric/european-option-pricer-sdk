@@ -36,7 +36,7 @@ static double now_seconds() {
 
 static void die_usage(const char* prog) {
     std::fprintf(stderr,
-        "usage: %s --blocks N --type call|put --mode MODE [--iterations N] [--warmup N] [--s0 v --k v --r v --sigma v --t v]\n",
+        "usage: %s --blocks N --type call|put --mode sdk-direct|sdk-gaussian-exp|sdk-buffer|mkl-sobol-uniform|mkl-sobol-gaussian-price [--iterations N] [--warmup N] [--s0 v --k v --r v --sigma v --t v]\n",
         prog);
     std::exit(2);
 }
