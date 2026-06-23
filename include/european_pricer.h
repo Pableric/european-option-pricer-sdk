@@ -17,7 +17,8 @@ typedef enum {
 typedef enum {
     EUROPEAN_MODE_BUFFER_REFERENCE = 0,
     EUROPEAN_MODE_GAUSSIAN_EXP = 1,
-    EUROPEAN_MODE_DIRECT_PAYOFF = 2
+    EUROPEAN_MODE_DIRECT_PAYOFF = 2,
+    EUROPEAN_MODE_HYBRID = 3
 } european_pricing_mode_t;
 
 typedef struct {

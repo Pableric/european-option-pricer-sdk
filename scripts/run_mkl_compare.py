@@ -111,8 +111,10 @@ def print_summary(rows):
 
     header = (
         f"{'blocks':>8} {'type':>4} {'samples':>10} "
-        f"{'direct ns':>11} {'gauss-exp ns':>12} {'mkl-full ns':>12} {'mkl-raw ns':>10} "
-        f"{'direct/mkl':>11} {'gauss/mkl':>10} {'gauss/direct':>13} {'direct/raw':>11}"
+        f"{'direct ns':>11} {'gauss-exp ns':>12} {'hybrid ns':>11} "
+        f"{'mkl-full ns':>12} {'mkl-raw ns':>10} "
+        f"{'direct/mkl':>11} {'gauss/mkl':>10} {'hybrid/mkl':>11} "
+        f"{'gauss/direct':>13} {'hybrid/gauss':>13} {'direct/raw':>11}"
     )
     print(header)
     print("-" * len(header))
@@ -120,16 +122,20 @@ def print_summary(rows):
     for (blocks, opt_type), modes in sorted(by_case.items(), key=lambda x: (int(x[0][0]), x[0][1])):
         sdk = modes.get("sdk-direct")
         sdk_gaussian = modes.get("sdk-gaussian-exp")
+        sdk_hybrid = modes.get("sdk-hybrid")
         mkl_full = modes.get("mkl-sobol-gaussian-price")
         mkl_uniform = modes.get("mkl-sobol-uniform")
         samples = next(iter(modes.values())).get("samples", "NA")
         direct_ns = as_float(sdk, "ns_per_value") if sdk else None
         gaussian_ns = as_float(sdk_gaussian, "ns_per_value") if sdk_gaussian else None
+        hybrid_ns = as_float(sdk_hybrid, "ns_per_value") if sdk_hybrid else None
         mkl_full_ns = as_float(mkl_full, "ns_per_value") if mkl_full else None
         raw_ns = as_float(mkl_uniform, "ns_per_value") if mkl_uniform else None
         direct_mkl = mkl_full_ns / direct_ns if direct_ns and mkl_full_ns else None
         gaussian_mkl = mkl_full_ns / gaussian_ns if gaussian_ns and mkl_full_ns else None
+        hybrid_mkl = mkl_full_ns / hybrid_ns if hybrid_ns and mkl_full_ns else None
         gaussian_direct = gaussian_ns / direct_ns if direct_ns and gaussian_ns else None
+        hybrid_gaussian = hybrid_ns / gaussian_ns if gaussian_ns and hybrid_ns else None
         direct_raw = direct_ns / raw_ns if direct_ns and raw_ns else None
 
         print(
@@ -138,11 +144,14 @@ def print_summary(rows):
             f"{fmt_text(samples, 10)} "
             f"{fmt_float(direct_ns, width=11)} "
             f"{fmt_float(gaussian_ns, width=12)} "
+            f"{fmt_float(hybrid_ns, width=11)} "
             f"{fmt_float(mkl_full_ns, width=12)} "
             f"{fmt_float(raw_ns, width=10)} "
             f"{fmt_ratio(direct_mkl, width=11)} "
             f"{fmt_ratio(gaussian_mkl, width=10)} "
+            f"{fmt_ratio(hybrid_mkl, width=11)} "
             f"{fmt_ratio(gaussian_direct, width=13)} "
+            f"{fmt_ratio(hybrid_gaussian, width=13)} "
             f"{fmt_ratio(direct_raw, width=11)}"
         )
 
@@ -159,7 +168,7 @@ def main():
     ap.add_argument("--iterations", type=int, default=5)
     ap.add_argument("--warmup", type=int, default=2)
     ap.add_argument("--types", nargs="+", choices=["call", "put"], default=["call", "put"])
-    ap.add_argument("--modes", nargs="+", default=["sdk-direct", "sdk-gaussian-exp", "mkl-sobol-uniform", "mkl-sobol-gaussian-price"])
+    ap.add_argument("--modes", nargs="+", default=["sdk-direct", "sdk-gaussian-exp", "sdk-hybrid", "mkl-sobol-uniform", "mkl-sobol-gaussian-price"])
     ap.add_argument("--s0", type=float, default=100.0)
     ap.add_argument("--k", type=float, default=100.0)
     ap.add_argument("--r", type=float, default=0.05)

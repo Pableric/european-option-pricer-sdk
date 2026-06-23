@@ -24,9 +24,10 @@ source /opt/intel/oneapi/setvars.sh
 python3 scripts/run_mkl_compare.py --blocks 128 --iterations 5 --warmup 2
 ```
 
-The benchmark reports both SDK pricing kernels, `sdk-direct` and
-`sdk-gaussian-exp`, separately from `mkl-sobol-uniform`, which is raw Sobol
-uniform generation only and does not produce a price.
+The benchmark reports the SDK pricing kernels, `sdk-direct`,
+`sdk-gaussian-exp`, and experimental `sdk-hybrid`, separately from
+`mkl-sobol-uniform`, which is raw Sobol uniform generation only and does not
+produce a price.
 
 Run a broader sweep:
 
@@ -45,6 +46,7 @@ Run only one SDK kernel:
 ```sh
 python3 scripts/run_mkl_compare.py --blocks 128 --modes sdk-direct
 python3 scripts/run_mkl_compare.py --blocks 128 --modes sdk-gaussian-exp
+python3 scripts/run_mkl_compare.py --blocks 128 --modes sdk-hybrid
 ```
 
 On a machine without native AVX-512, wrap the benchmark with Intel SDE:

@@ -53,5 +53,7 @@ add_test(NAME smoke_direct
   COMMAND bench_european_mkl --blocks 1 --type call --mode sdk-direct --iterations 2 --warmup 1)
 add_test(NAME smoke_gaussian_exp
   COMMAND bench_european_mkl --blocks 1 --type call --mode sdk-gaussian-exp --iterations 2 --warmup 1)
+add_test(NAME smoke_hybrid
+  COMMAND bench_european_mkl --blocks 1 --type call --mode sdk-hybrid --iterations 2 --warmup 1)
 add_test(NAME smoke_mkl_full
   COMMAND bench_european_mkl --blocks 1 --type call --mode mkl-sobol-gaussian-price --iterations 2 --warmup 1)
