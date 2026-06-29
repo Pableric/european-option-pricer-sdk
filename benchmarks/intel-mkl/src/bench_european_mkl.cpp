@@ -36,7 +36,7 @@ static double now_seconds() {
 
 static void die_usage(const char* prog) {
     std::fprintf(stderr,
-        "usage: %s --blocks N --type call|put --mode sdk-direct|sdk-gaussian-exp|sdk-hybrid|sdk-buffer|mkl-sobol-uniform|mkl-sobol-gaussian-price [--iterations N] [--warmup N] [--s0 v --k v --r v --sigma v --t v]\n",
+        "usage: %s --blocks N --type call|put --mode sdk-direct|sdk-gaussian-exp|sdk-center-shared|sdk-hybrid|sdk-buffer|mkl-sobol-uniform|mkl-sobol-gaussian-price [--iterations N] [--warmup N] [--s0 v --k v --r v --sigma v --t v]\n",
         prog);
     std::exit(2);
 }
@@ -208,9 +208,10 @@ int main(int argc, char** argv) {
     double price = 0.0;
     double setup_seconds = 0.0;
 
-    if (c.mode == "sdk-direct" || c.mode == "sdk-gaussian-exp" || c.mode == "sdk-hybrid" || c.mode == "sdk-buffer") {
+    if (c.mode == "sdk-direct" || c.mode == "sdk-gaussian-exp" || c.mode == "sdk-center-shared" || c.mode == "sdk-hybrid" || c.mode == "sdk-buffer") {
         european_pricing_mode_t mode = EUROPEAN_MODE_DIRECT_PAYOFF;
         if (c.mode == "sdk-gaussian-exp") mode = EUROPEAN_MODE_GAUSSIAN_EXP;
+        if (c.mode == "sdk-center-shared") mode = EUROPEAN_MODE_GAUSSIAN_CENTER_SHARED;
         if (c.mode == "sdk-hybrid") mode = EUROPEAN_MODE_HYBRID;
         if (c.mode == "sdk-buffer") mode = EUROPEAN_MODE_BUFFER_REFERENCE;
         for (int i = 0; i < c.warmup; ++i) price = run_sdk(c, mode, &setup_seconds);
