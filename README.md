@@ -84,27 +84,27 @@ baseline, not a pricing baseline.
 
 ```text
 type  blocks  samples     sdk gauss ns  mkl full ns  mkl raw ns  vs MKL full  vs MKL raw
-call       1       8,192      0.320556     5.459473    0.107300       17.03x       0.33x
-put        1       8,192      0.312866     5.229248    0.109985       16.71x       0.35x
-call       2      16,384      0.246765     5.349609    0.113464       21.68x       0.46x
-put        2      16,384      0.245300     5.103455    0.130554       20.80x       0.53x
-call       4      32,768      0.202271     5.244476    0.114899       25.93x       0.57x
-put        4      32,768      0.203888     5.004608    0.107574       24.55x       0.53x
-call       8      65,536      0.179428     5.119690    0.110840       28.53x       0.62x
-put        8      65,536      0.180267     4.988266    0.110199       27.67x       0.61x
-call      16     131,072      0.168640     5.269676    0.109154       31.25x       0.65x
-put       16     131,072      0.168541     4.940216    0.109978       29.31x       0.65x
-call      32     262,144      0.163387     5.227467    0.112938       31.99x       0.69x
-put       32     262,144      0.163303     4.933392    0.107868       30.21x       0.66x
-call      64     524,288      0.160809     5.182238    0.130350       32.23x       0.81x
-put       64     524,288      0.160677     4.847273    0.139717       30.17x       0.87x
-call     128   1,048,576      0.159328     5.242552    0.188510       32.90x       1.18x
-put      128   1,048,576      0.159221     5.006371    0.195764       31.44x       1.23x
+call       1       8,192      0.188354     4.901245    0.097168       26.02x       0.52x
+put        1       8,192      0.193237     4.446167    0.100586       23.01x       0.52x
+call       2      16,384      0.168030     4.624756    0.112976       27.52x       0.67x
+put        2      16,384      0.167725     4.293579    0.100159       25.60x       0.60x
+call       4      32,768      0.162750     4.657501    0.096985       28.62x       0.60x
+put        4      32,768      0.135895     4.366455    0.101440       32.13x       0.75x
+call       8      65,536      0.122375     4.851883    0.097824       39.65x       0.80x
+put        8      65,536      0.132751     4.304596    0.097382       32.43x       0.73x
+call      16     131,072      0.127625     4.574944    0.097542       35.85x       0.76x
+put       16     131,072      0.145645     4.245560    0.093956       29.15x       0.65x
+call      32     262,144      0.121628     4.369350    0.090355       35.92x       0.74x
+put       32     262,144      0.118477     4.115322    0.096710       34.74x       0.82x
+call      64     524,288      0.121040     4.493906    0.124441       37.13x       1.03x
+put       64     524,288      0.117683     4.257366    0.125456       36.18x       1.07x
+call     128   1,048,576      0.135514     4.428988    0.175249       32.68x       1.29x
+put      128   1,048,576      0.117492     4.421417    0.182332       37.63x       1.55x
 ```
 
 The one-block case is included deliberately. The Gaussian path is already much
 faster than oneMKL full pricing at small batches, while larger batches show the
-intended steady-state behavior. At 128 blocks, full SDK Gaussian pricing is also
-faster than raw oneMKL Sobol uniform generation alone.
+intended steady-state behavior. At 64 and 128 blocks, full SDK Gaussian pricing
+is also faster than raw oneMKL Sobol uniform generation alone in this snapshot.
 
 `mkl-sobol-uniform` is a raw generator baseline, not a pricing baseline.
